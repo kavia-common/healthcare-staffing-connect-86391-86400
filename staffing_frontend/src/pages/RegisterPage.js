@@ -1,18 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-// PUBLIC_INTERFACE
+// DEMO USER CONSTANTS
+const DEMO_EMAIL = "demo@demo.com";
+const DEMO_PASSWORD = "DemoPass123!";
+
+/**
+ * PUBLIC_INTERFACE
+ * Registration form with pre-filled demo user info and note for testers.
+ */
 function RegisterPage() {
   const { register, loading } = useAuth();
   const navigate = useNavigate();
   const [role, setRole] = useState("clinician");
-  const [name, setName] = useState("");
+
+  // Pre-fill demo user values initially
+  const [name, setName] = useState("Demo User");
   const [orgName, setOrgName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(DEMO_EMAIL);
+  const [password, setPassword] = useState(DEMO_PASSWORD);
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
+
+  // If user switches to org registration, clear personal name
+  useEffect(() => {
+    if (role === "clinician") {
+      setName("Demo User");
+    } else {
+      setOrgName("Demo Organization");
+    }
+    // Always pre-fill demo credentials in their respective fields
+    setEmail(DEMO_EMAIL);
+    setPassword(DEMO_PASSWORD);
+  }, [role]);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -30,6 +51,27 @@ function RegisterPage() {
   return (
     <div className="card" style={{ maxWidth: 380, margin: "2rem auto" }}>
       <h2 style={{ color: "var(--color-secondary)" }}>Register</h2>
+      <div
+        style={{
+          background: "#fffae6",
+          border: "1.5px solid #ffe082",
+          color: "#ce8700",
+          padding: "10px",
+          borderRadius: "8px",
+          marginBottom: "16px",
+          fontSize: "15px"
+        }}
+      >
+        <b>Demo User:</b>&nbsp; To test login or registration, use the credentials below:<br />
+        <span style={{ fontFamily: "monospace" }}>
+          Email: {DEMO_EMAIL}<br />
+          Password: {DEMO_PASSWORD}
+        </span>
+        <div style={{ fontSize: "13px", marginTop: 5, color: "#665000" }}>
+          Registering with these credentials will create a fresh demo user.<br/>
+          <b>Tip:</b> You can simply click "Register" to create the <i>demo@demo.com</i> test account.
+        </div>
+      </div>
       <form onSubmit={handleSubmit}>
         <label>
           <input type="radio" name="role" value="clinician" checked={role === "clinician"} onChange={() => setRole("clinician")} />
