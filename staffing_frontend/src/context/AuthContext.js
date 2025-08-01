@@ -21,15 +21,63 @@ export const AuthProvider = ({ children }) => {
   }, [token, user, role]);
 
   // PUBLIC_INTERFACE
+  // PUBLIC_INTERFACE
   const login = async (email, password) => {
     setLoading(true);
     try {
+      // Try login first
       const res = await fetch(`${process.env.REACT_APP_API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) throw new Error("Login failed");
+      if (!res.ok) {
+        // Login failed, try to auto-register demo user
+        // Only for demo credentials (for smoother QA/testing UX)
+        if (
+          email === "demo@demo.com" &&
+          password === "DemoPass123!"
+        ) {
+          // Try registration endpoint
+          const regRes = await fetch(`${process.env.REACT_APP_API_URL}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email,
+              password,
+              role: "clinician",
+              name: "Demo User",
+            }),
+          });
+          if (!regRes.ok) {
+            const regErr = await regRes.text();
+            setLoading(false);
+            return { success: false, message: `Demo not registered: ${regErr}` };
+          }
+          // Registration success, now try login again
+          const res2 = await fetch(`${process.env.REACT_APP_API_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          if (!res2.ok) {
+            setLoading(false);
+            return { success: false, message: "Login failed after registration!" };
+          }
+          const data = await res2.json();
+          setToken(data.token);
+          setRole(data.role);
+          localStorage.setItem("token", data.token);
+          localStorage.setItem("role", data.role);
+          setUser({ ...data.user, role: data.role });
+          setLoading(false);
+          return { success: true };
+        }
+        // Non-demo user: surface login error
+        const txt = await res.text();
+        setLoading(false);
+        return { success: false, message: txt || "Login failed" };
+      }
       const data = await res.json();
       setToken(data.token);
       setRole(data.role);
